@@ -87,7 +87,7 @@ def fetch_image_urls(query: str, max_links_to_fetch: int, wd: webdriver, sleep_b
     return image_urls
 
 
-def search_and_download(search_term: str, driver_path: str, target_path='./images', number_images=50):
+def search_and_download(search_term: str, driver_path: str, target_path='./images', number_images: int):
     target_folder = os.path.join(target_path, '_'.join(search_term.lower().split(' ')))
 
     if not os.path.exists(target_folder):
@@ -129,4 +129,5 @@ def detect_landmarks(path, landmark_name):
 
 
 search_term = input("Name of Monument:" )
-search_and_download(search_term=search_term, driver_path=DRIVER_PATH)
+number_img = input("Number of images for hyperlapse: ")
+search_and_download(search_term=search_term, driver_path=DRIVER_PATH, number_images=number_img*2)
