@@ -5,6 +5,7 @@ import requests
 from selenium import webdriver
 import os
 import io
+from google.cloud import vision
 
 DRIVER_PATH = '/Users/sunidhidhawan/Desktop/ai-perlapse/chromedriver'
 wd = webdriver.Chrome(executable_path=DRIVER_PATH)
@@ -99,5 +100,33 @@ def search_and_download(search_term: str, driver_path: str, target_path='./image
         persist_image(target_folder, elem)
 
 
-search_term = 'Statue of Liberty'
+def detect_landmarks(path, landmark_name):
+    """ Detects landmarks in the file. """
+
+    os.environ[
+        'GOOGLE_APPLICATION_CREDENTIALS'] = r'/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/ServiceAccountKey.json'
+    client = vision.ImageAnnotatorClient()
+    # print(os.getcwd())
+
+    for filename in os.listdir(path):
+        # print(filename)
+        filename = path + "/" + filename
+        # filename = "/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/images_collection/"+filename
+        with io.open(filename, 'rb') as image_file:
+            content = image_file.read()
+        image = vision.Image(content=content)
+
+        response = client.landmark_detection(image=image)
+        landmarks = response.landmark_annotations
+        CUT_OFF_SCORE = 0.5
+
+        try:
+            if landmarks[0].score < CUT_OFF_SCORE:
+                print("SCORE LOW:" + filename)
+                # os.remove(filename)
+        except:
+            print("NO LANDMARKS:" + filename)
+
+
+search_term = input("Name of Monument:" )
 search_and_download(search_term=search_term, driver_path=DRIVER_PATH)
