@@ -1,4 +1,4 @@
-# from google.cloud import vision
+from google.cloud import vision
 
 import io
 import os
