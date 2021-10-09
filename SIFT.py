@@ -3,6 +3,55 @@ import cv2
 from matplotlib import pyplot as plt
 from LandmarkDetection import *
 import random
+import math
+
+def calculate_distance(distances):
+    distances = np.array(distances).reshape((4, 1))
+    weights = np.array([0.5, 0.25, 0.125, 0.07])
+    return np.dot(weights, distances)
+
+def compute_angle(p1, p2):
+    # angle of p2 with respect to p1
+    if p2==p1:
+        return 1
+    hyp = ((p2[0]-p1[0])**2+(p2[1]-p1[1])**2)**0.5
+    adjc = p2[0] - p1[0]
+    angle = math.acos(adjc/hyp)
+    return angle/(math.pi/2)
+
+def compute_distance(p1, p2):
+    if p2==p1:
+        return 0
+    hyp = ((p2[0]-p1[0])**2+(p2[1]-p1[1])**2)**0.5
+    return hyp
+
+def calculate_point_similarity(kp1, kp2):
+    # kp1/2 = [(x, y), (x, y), (x, y), (x, y)]
+    matrix1 = np.zeros(shape=(4, 4))
+    matrix2 = np.zeros(shape=(4, 4))
+
+    for r in range(4):
+        for c in range(4):
+            matrix1[r][c] = compute_distance(kp1[r].pt, kp1[c].pt)
+            matrix2[r][c] = compute_distance(kp2[r].pt, kp2[c].pt)
+
+    return (
+        np.divide(matrix1,matrix2),
+    )
+
+def point_distances_using_complex(kp1, kp2):
+    # Convert x, y coordinates into complex numbers
+    # so that the distances are much easier to compute
+    z1 = np.array([[complex(c.pt[0], c.pt[1]) for c in kp1]])
+    z2 = np.array([[complex(c.pt[0], c.pt[1]) for c in kp2]])
+
+    # Computes the intradistances between keypoints for each image
+    KP_dist1 = abs(z1.T - z1)
+    KP_dist2 = abs(z2.T - z2)
+
+    # Distance between featured matched keypoints
+    # FM_dist = abs(z2 - z1)
+    return KP_dist1[:906,:906], KP_dist2, np.linalg.det(np.divide(KP_dist1[:906,:906], KP_dist2))
 
 def calculate_padded_box(img_path, return_coordinates=False):
 
@@ -43,6 +92,7 @@ def sift_comparison(og1, og2):
 
     keypoints_1, descriptors_1 = sift.detectAndCompute(img1, None)
     keypoints_2, descriptors_2 = sift.detectAndCompute(img2, None)
+    # TODO: delete keypoint if on edge
 
     # feature matching
     bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
@@ -55,17 +105,19 @@ def sift_comparison(og1, og2):
 def create_match_points(og1, og2, n):
     
     matches, keypoints_1, keypoints_2 = sift_comparison(og1, og2)
+    distances = []
     
     for match in matches[:n]:
         print(match.distance)
+        distances.append(match.distance)
         color = random_color()
         p1 = keypoints_1[match.queryIdx].pt
         p2 = keypoints_2[match.trainIdx].pt
         # print(type(p1[0]))
-        og1 = cv2.circle(og1, (int(p1[0]), int(p1[1])), 8, color, 5)
-        og2 = cv2.circle(og2, (int(p2[0]), int(p2[1])), 8, color, 5)
+        og1 = cv2.circle(og1, (int(p1[0]), int(p1[1])), 8, (255,0,0), 5)
+        og2 = cv2.circle(og2, (int(p2[0]), int(p2[1])), 8, (255,0,0), 5)
         
-    return og1, og2
+    return og1, og2, distances, keypoints_1, keypoints_2
 
 def crop_image_to_bounding_box(image_path, v):
     image = cv2.imread(image_path)
@@ -80,7 +132,11 @@ def sift_bounding_box_comparison(og1_path, og2_path, n):
     bb1 = crop_image_to_bounding_box(og1_path, v1)
     bb2 = crop_image_to_bounding_box(og2_path, v2)
 
-    bb1_sift, bb2_sift = create_match_points(bb1, bb2, n)
+    bb1_sift, bb2_sift, distances, kp1, kp2 = create_match_points(bb1, bb2, n)
+
+    print(calculate_distance(distances))
+    print(calculate_point_similarity(kp1, kp2))
+    # print(point_distances_using_complex(kp1, kp2))
 
     og1[v1[0].y:v1[1].y, v1[0].x:v1[1].x] = bb1_sift
     og2[v2[0].y:v2[1].y, v2[0].x:v2[1].x] = bb2_sift
@@ -88,10 +144,9 @@ def sift_bounding_box_comparison(og1_path, og2_path, n):
     return og1, og2, v1, v2
 
 
-
 if __name__=="__main__":
-    name1 = 'taj1.jpeg'
-    name2 = 'faketaj.jpeg'
+    name1 = 'taj2.jpeg'
+    name2 = 'taj1.jpeg'
 
     og1 = cv2.imread(name1)
     og2 = cv2.imread(name2)
