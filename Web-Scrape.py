@@ -1,5 +1,5 @@
 from urllib.request import urlopen as uReq
-from bs4 import BeautifulSoup4 as soup
+from bs4 import BeautifulSoup as soup
 
 def main_function():
     url_builder()
