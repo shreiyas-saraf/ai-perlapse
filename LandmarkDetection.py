@@ -65,10 +65,10 @@ def draw_bounding_box(image, vertices, imageReadAlready=True, padding=False):
 
 
 if __name__ == '__main__':
-    image = "SOL082.jpeg"
+    image = "image8.jpg"
     landmarks = detect_landmarks(image)
     vertices = landmarks[2]
-
+    description = landmarks[0]
     im = cv2.imread(image)
 
     start = (vertices[0].x, vertices[0].y)

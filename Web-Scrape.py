@@ -61,6 +61,7 @@ def download_image():
         file_of_images = open(image_name + '.jpg', 'wb')
         final_image = requests.get(i)
         file_of_images.write(final_image.content)
+
     file_of_images.close()
 
 
@@ -76,9 +77,12 @@ def detect_landmarks(path, landmark_name):
 
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/ServiceAccountKey.json'
     client = vision.ImageAnnotatorClient()
+    # print(os.getcwd())
 
-    for filename in glob.glob(os.path.join(path, '*.jpg')):
-        print(filename)
+    for filename in os.listdir(path):
+        # print(filename)
+        filename = path+"/"+filename
+        # filename = "/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/images_collection/"+filename
         with io.open(filename, 'rb') as image_file:
             content = image_file.read()
         image = vision.Image(content=content)
@@ -86,10 +90,18 @@ def detect_landmarks(path, landmark_name):
         response = client.landmark_detection(image=image)
         landmarks = response.landmark_annotations
 
-        if landmarks[0].description != landmark_name:
-            os.remove(filename)
-        elif landmarks[0].score < 0.7:
-            os.remove(filename)
+        try:
+            if not landmarks[0].description.startswith(landmark_name):
+                # TODO: CHECK FOR LOCATION
+                # os.remove(filename)
+                print("NOT MATCHING:"+filename + " - "+landmarks[0].description)
+            elif landmarks[0].score < 0.5:
+                # os.remove(filename)
+                print("SCORE LOW:"+filename)
+
+        except:
+            print("NO LANDMARKS:"+filename)
+
 
     # return (
     #     landmarks[0].description,
@@ -138,6 +150,6 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 """
-main_function()
-folder_path = "images_collection"
-detect_landmarks(folder_path, "Taj Mahal")
+# main_function()
+folder_path = "Liberty Pics"
+detect_landmarks(folder_path, "Statue of Liberty")
