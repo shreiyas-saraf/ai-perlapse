@@ -2,6 +2,7 @@
 
 import io
 import os
+import glob
 import pandas as pd
 
 # import cv2
@@ -13,21 +14,26 @@ import pandas as pd
 """
 
 
-def detect_landmarks(path):
+def detect_landmarks(path, landmark_name):
     """Detects landmarks in the file."""
-
+    """
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
     client = vision.ImageAnnotatorClient()
+    """
 
-    for filename in os.listdir(os.getcwd()):
+    for filename in glob.glob(os.path.join(path, '*.jpg')):
+        print(filename)
         with io.open(filename, 'rb') as image_file:
             content = image_file.read()
-        print(filename)
+        image = vision.Image(content=content)
 
-    image = vision.Image(content=content)
+        response = client.landmark_detection(image=image)
+        landmarks = response.landmark_annotations
 
-    response = client.landmark_detection(image=image)
-    landmarks = response.landmark_annotations
+        if landmarks[0].description != landmark_name:
+            os.remove(filename)
+        elif landmarks[0].score < 0.7:
+            os.remove(filename)
 
     return (
         landmarks[0].description,
@@ -35,6 +41,7 @@ def detect_landmarks(path):
         landmarks[0].bounding_poly.vertices,
         landmarks[0].locations
     )
+
     #
     # for landmark in landmarks[:1]:
     #     print(landmark.description)
@@ -53,7 +60,9 @@ def detect_landmarks(path):
 
 
 folder_path = "images_collection"
-landmarks2 = detect_landmarks(folder_path)
+detect_landmarks(folder_path, "Taj Mahal")
+
+"""
 image = "drawing.png"
 landmarks = detect_landmarks(image)
 vertices = landmarks[2]
@@ -74,3 +83,5 @@ print(landmarks[1])
 cv2.imshow("image", im)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+"""
