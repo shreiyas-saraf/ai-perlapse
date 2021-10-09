@@ -1,8 +1,17 @@
-from google.cloud import vision
+# from google.cloud import vision
+
 import io
 import os
 import pandas as pd
-import cv2
+
+# import cv2
+
+"""def valid_images():
+    i = 0
+    while i < 20:
+        detect_landmarks(ai-perlapse/images_collection/image)
+"""
+
 
 def detect_landmarks(path):
     """Detects landmarks in the file."""
@@ -10,8 +19,10 @@ def detect_landmarks(path):
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
     client = vision.ImageAnnotatorClient()
 
-    with io.open(path, 'rb') as image_file:
-        content = image_file.read()
+    for filename in os.listdir(os.getcwd()):
+        with io.open(filename, 'rb') as image_file:
+            content = image_file.read()
+        print(filename)
 
     image = vision.Image(content=content)
 
@@ -40,6 +51,9 @@ def detect_landmarks(path):
     #         'https://cloud.google.com/apis/design/errors'.format(
     #             response.error.message))
 
+
+folder_path = "images_collection"
+landmarks2 = detect_landmarks(folder_path)
 image = "drawing.png"
 landmarks = detect_landmarks(image)
 vertices = landmarks[2]
@@ -49,7 +63,7 @@ im = cv2.imread(image)
 start = (vertices[0].x, vertices[0].y)
 end = (vertices[2].x, vertices[2].y)
 
-color = (255,0,0)
+color = (255, 0, 0)
 thickness = 2
 
 im = cv2.rectangle(im, start, end, color, thickness)
@@ -60,6 +74,3 @@ print(landmarks[1])
 cv2.imshow("image", im)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-
-
