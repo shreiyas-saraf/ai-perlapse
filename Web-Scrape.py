@@ -74,7 +74,7 @@ def download_image():
 def detect_landmarks(path, landmark_name):
     """Detects landmarks in the file."""
 
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/ServiceAccountKey.json'
     client = vision.ImageAnnotatorClient()
 
     for filename in glob.glob(os.path.join(path, '*.jpg')):
@@ -91,12 +91,12 @@ def detect_landmarks(path, landmark_name):
         elif landmarks[0].score < 0.7:
             os.remove(filename)
 
-    return (
-        landmarks[0].description,
-        landmarks[0].score,
-        landmarks[0].bounding_poly.vertices,
-        landmarks[0].locations
-    )
+    # return (
+    #     landmarks[0].description,
+    #     landmarks[0].score,
+    #     landmarks[0].bounding_poly.vertices,
+    #     landmarks[0].locations
+    # )
 
     #
     # for landmark in landmarks[:1]:
@@ -140,4 +140,4 @@ cv2.destroyAllWindows()
 """
 main_function()
 folder_path = "images_collection"
-detect_landmarks(folder_path)
+detect_landmarks(folder_path, "Taj Mahal")

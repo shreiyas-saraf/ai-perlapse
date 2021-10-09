@@ -1,47 +1,32 @@
 from google.cloud import vision
-
 import io
 import os
-import glob
 import pandas as pd
+import cv2
 
-# import cv2
-
-"""def valid_images():
-    i = 0
-    while i < 20:
-        detect_landmarks(ai-perlapse/images_collection/image)
-"""
-
-
-def detect_landmarks(path, landmark_name):
+def detect_landmarks(path, drawBoundingBox = False):
     """Detects landmarks in the file."""
-    """
+
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
     client = vision.ImageAnnotatorClient()
-    """
 
-    for filename in glob.glob(os.path.join(path, '*.jpg')):
-        print(filename)
-        with io.open(filename, 'rb') as image_file:
-            content = image_file.read()
-        image = vision.Image(content=content)
+    with io.open(path, 'rb') as image_file:
+        content = image_file.read()
 
-        response = client.landmark_detection(image=image)
-        landmarks = response.landmark_annotations
+    image = vision.Image(content=content)
 
-        if landmarks[0].description != landmark_name:
-            os.remove(filename)
-        elif landmarks[0].score < 0.7:
-            os.remove(filename)
+    response = client.landmark_detection(image=image)
+    landmarks = response.landmark_annotations
 
-    return (
+    if drawBoundingBox:
+        draw_bounding_box(path, landmarks[0].bounding_poly.vertices, False)
+    else:
+        return (
         landmarks[0].description,
         landmarks[0].score,
         landmarks[0].bounding_poly.vertices,
         landmarks[0].locations
     )
-
     #
     # for landmark in landmarks[:1]:
     #     print(landmark.description)
@@ -58,30 +43,48 @@ def detect_landmarks(path, landmark_name):
     #         'https://cloud.google.com/apis/design/errors'.format(
     #             response.error.message))
 
+def draw_bounding_box(image, vertices, imageReadAlready=True, padding=False):
 
-folder_path = "images_collection"
-detect_landmarks(folder_path, "Taj Mahal")
+    if not imageReadAlready:
+        im = cv2.imread(image)
+    else:
+        im = image
 
-"""
-image = "drawing.png"
-landmarks = detect_landmarks(image)
-vertices = landmarks[2]
+    start = (vertices[0].x, vertices[0].y)
+    end = (vertices[1].x, vertices[1].y)
 
-im = cv2.imread(image)
+    if padding:
+        start = (vertices[0].x-50, vertices[0].y-50)
+        end = (vertices[1].x+50, vertices[1].y+50)
 
-start = (vertices[0].x, vertices[0].y)
-end = (vertices[2].x, vertices[2].y)
+    color = (255, 0, 0)
+    thickness = 2
 
-color = (255, 0, 0)
-thickness = 2
+    im = cv2.rectangle(im, start, end, color, thickness)
+    return im
 
-im = cv2.rectangle(im, start, end, color, thickness)
 
-print(landmarks[0])
-print(landmarks[1])
+if __name__ == '__main__':
+    image = "SOL082.jpeg"
+    landmarks = detect_landmarks(image)
+    vertices = landmarks[2]
 
-cv2.imshow("image", im)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    im = cv2.imread(image)
 
-"""
+    start = (vertices[0].x, vertices[0].y)
+    end = (vertices[2].x, vertices[2].y)
+
+    color = (255,0,0)
+    thickness = 2
+
+    im = cv2.rectangle(im, start, end, color, thickness)
+
+    print(landmarks[0])
+    print(landmarks[1])
+
+    cv2.imshow("image", im)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+

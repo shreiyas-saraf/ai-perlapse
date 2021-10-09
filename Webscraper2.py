@@ -2,7 +2,7 @@ import requests, lxml, re, json, urllib.request
 from bs4 import BeautifulSoup
 
 
-def web_scrape:
+def web_scrape():
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-Agent',
                           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582')]
