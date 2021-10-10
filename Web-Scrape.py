@@ -1,10 +1,11 @@
 from urllib.request import urlopen as uReq
 import requests
 from bs4 import BeautifulSoup
-from google.cloud import vision
+
 import io
 import os
 import glob
+from selenium import webdriver
 import pandas as pd
 
 

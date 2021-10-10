@@ -9,6 +9,7 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 # TODO: try to see relative distance from mean in one and then compare in other?
 # TODO: try to compare anomalies
 
+
 def calculate_distance(distances):
     distances = np.array(distances).reshape((20, 1))
     weights = np.zeros((1,20))
@@ -16,20 +17,23 @@ def calculate_distance(distances):
     # print(weights)
     return np.dot(weights, distances)
 
+
 def compute_angle(p1, p2):
     # angle of p2 with respect to p1
-    if p2==p1:
+    if p2 == p1:
         return 1
-    hyp = ((p2[0]-p1[0])**2+(p2[1]-p1[1])**2)**0.5
+    hyp = ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2) ** 0.5
     adjc = p2[0] - p1[0]
-    angle = math.acos(adjc/hyp)
-    return angle/(math.pi/2)
+    angle = math.acos(adjc / hyp)
+    return angle / (math.pi / 2)
+
 
 def compute_distance(p1, p2):
-    if p2==p1:
+    if p2 == p1:
         return 0
-    hyp = ((p2[0]-p1[0])**2+(p2[1]-p1[1])**2)**0.5
+    hyp = ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2) ** 0.5
     return hyp
+
 
 def calculate_point_similarity(kp1, kp2):
     # kp1/2 = [(x, y), (x, y), (x, y), (x, y)]
@@ -42,7 +46,7 @@ def calculate_point_similarity(kp1, kp2):
             matrix2[r][c] = compute_distance(kp2[r].pt, kp2[c].pt)
 
     return (
-        np.divide(matrix1,matrix2),
+        np.divide(matrix1, matrix2),
     )
 
 def convex_hull(image):
@@ -83,10 +87,10 @@ def point_distances_using_complex(kp1, kp2):
 
     # Distance between featured matched keypoints
     # FM_dist = abs(z2 - z1)
-    return KP_dist1[:906,:906], KP_dist2, np.linalg.det(np.divide(KP_dist1[:906,:906], KP_dist2))
+    return KP_dist1[:906, :906], KP_dist2, np.linalg.det(np.divide(KP_dist1[:906, :906], KP_dist2))
+
 
 def calculate_padded_box(img_path, return_coordinates=False):
-
     v = bounding_box_coordinates(img_path, padding=True)
     img = cv2.imread(img_path)
 
@@ -97,6 +101,7 @@ def calculate_padded_box(img_path, return_coordinates=False):
     bb = cv2.circle(bb, mid, 8, (255, 0, 0), -5)
 
     return bb
+
 
 def bounding_box_coordinates(image_path, padding=False):
     landmarks = detect_landmarks(image_path)
@@ -111,9 +116,11 @@ def bounding_box_coordinates(image_path, padding=False):
             pass
     return v[0], v[2]
 
+
 def random_color():
-    levels = range(32,256,32)
+    levels = range(32, 256, 32)
     return tuple(random.choice(levels) for _ in range(3))
+
 
 def sift_comparison(og1, og2):
     img1 = cv2.cvtColor(og1, cv2.COLOR_BGR2GRAY)
@@ -131,14 +138,14 @@ def sift_comparison(og1, og2):
 
     matches = bf.match(descriptors_1, descriptors_2)
     matches = sorted(matches, key=lambda x: x.distance)
-    
+
     return matches, keypoints_1, keypoints_2
 
+
 def create_match_points(og1, og2, n):
-    
     matches, keypoints_1, keypoints_2 = sift_comparison(og1, og2)
     distances = []
-    
+
     for match in matches[:n]:
         # print(match.distance)
         distances.append(match.distance)
@@ -146,18 +153,19 @@ def create_match_points(og1, og2, n):
         p1 = keypoints_1[match.queryIdx].pt
         p2 = keypoints_2[match.trainIdx].pt
         # print(type(p1[0]))
-        og1 = cv2.circle(og1, (int(p1[0]), int(p1[1])), 8, (255,0,0), 5)
-        og2 = cv2.circle(og2, (int(p2[0]), int(p2[1])), 8, (255,0,0), 5)
-        
+        og1 = cv2.circle(og1, (int(p1[0]), int(p1[1])), 8, (255, 0, 0), 5)
+        og2 = cv2.circle(og2, (int(p2[0]), int(p2[1])), 8, (255, 0, 0), 5)
+
     return og1, og2, distances, keypoints_1, keypoints_2
+
 
 def crop_image_to_bounding_box(image_path, v):
     image = cv2.imread(image_path)
     crop = image[v[0].y:v[1].y, v[0].x:v[1].x]
     return crop
 
-def sift_bounding_box_comparison(og1_path, og2_path, n):
 
+def sift_bounding_box_comparison(og1_path, og2_path, n):
     v1 = bounding_box_coordinates(og1_path)
     v2 = bounding_box_coordinates(og2_path)
 
@@ -176,7 +184,7 @@ def sift_bounding_box_comparison(og1_path, og2_path, n):
     return og1, og2, v1, v2, kp1, kp2
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     name1 = 'taj2.jpeg'
     name2 = 'taj1.jpeg'
 
