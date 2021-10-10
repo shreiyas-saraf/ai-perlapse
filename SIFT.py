@@ -3,12 +3,17 @@ import cv2
 from matplotlib import pyplot as plt
 from LandmarkDetection import *
 import random
+from PIL import Image
 import math
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 # TODO: try to see relative distance from mean in one and then compare in other?
 # TODO: try to compare anomalies
 
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
 def calculate_distance(distances, num_keypoints=5):
     distances = np.array(distances).reshape((num_keypoints, 1))
@@ -104,7 +109,10 @@ def calculate_padded_box(img_path, return_coordinates=False):
 
 
 def bounding_box_coordinates(image_path, padding=False):
-    landmarks = detect_landmarks(image_path)
+    try:
+        landmarks = detect_landmarks(image_path)
+    except:
+        return Point(0,0), Point(cv2.imread(image_path).shape[1], cv2.imread(image_path).shape[0])
     v = landmarks[2]
     if padding:
         try:
@@ -182,7 +190,7 @@ def sift_bounding_box_comparison(og1_path, og2_path, n, bb=True):
         bb1 = crop_image_to_bounding_box(og1_path, v1)
         bb2 = crop_image_to_bounding_box(og2_path, v2)
 
-        print("1 done")
+        # print("1 done")
 
     bb1_sift, bb2_sift, distances, kp1, kp2 = create_match_points(bb1, bb2, n)
 
@@ -195,43 +203,49 @@ def sift_bounding_box_comparison(og1_path, og2_path, n, bb=True):
 
     return og1, og2, v1, v2, kp1, kp2
 
+def batch_rearrange(folder):
+    out = []
+    images = [item for item in os.listdir(folder)]
+    # images =[item for item in os.listdir(folder)]
+
+    for i in range(len(images)-1):
+        name1 = folder+"/"+images[i]
+        name2 = folder+"/"+images[i+1]
+
+        print(name1, name2)
+        # og1 = cv2.imread(name1)
+        # og2 = cv2.imread(name2)
+
+        # image1, image2 = create_match_points(og1, og2, 10)
+
+        # box1 = calculate_padded_box(name1)
+        # box2 = calculate_padded_box(name2)
+        #
+        bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 3)
+
+        # bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
+        # bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
+
+        # print(kp1[1], kp1[2])
+        print(compute_distance(kp1[1], kp1[2]))
+
+        # print(kp2[1], kp2[2])
+        print(compute_distance(kp2[1], kp2[2]))
+        #
+        # cv2.imshow("1", bb_sift1)
+        # cv2.imshow("2", bb_sift2)
+        #
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+def process_jpg_png(image_path):
+    im1 = Image.open(image_path)
+    im1.save(image_path[:-3] + ".jpeg")
 
 if __name__ == "__main__":
-    name1 = 'IMG_0626.JPG'
-    name2 = 'IMG_0705.JPG'
+    name1 = 'hyp6.png'
+    name2 = 'hyp2.png'
 
-    # og1 = cv2.imread(name1)
-    # og2 = cv2.imread(name2)
+    folder = "hyperlapse"
+    batch_rearrange(folder)
 
-    # image1, image2 = create_match_points(og1, og2, 10)
-
-    # box1 = calculate_padded_box(name1)
-    # box2 = calculate_padded_box(name2)
-
-    bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 3, False)
-
-    # bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
-    # bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
-
-    print(kp1[0], kp1[2])
-    print(compute_distance(kp1[0], kp1[2]))
-
-    print(kp2[0], kp2[2])
-    print(compute_distance(kp2[0], kp2[2]))
-
-    #
-    # drawing = convex_hull(cv2.imread(name1))
-    #
-    # cv2.imshow("Drawing", drawing)
-    #
-    # cv2.imshow("", cv2.imread(name1))
-    # cv2.imshow("a", box2)
-
-    # cv2.imshow("", image1)
-    # cv2.imshow("a", image2)
-
-    cv2.imshow("1", bb_sift1)
-    cv2.imshow("2", bb_sift2)
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
