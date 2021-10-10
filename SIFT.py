@@ -10,10 +10,10 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 # TODO: try to compare anomalies
 
 
-def calculate_distance(distances):
-    distances = np.array(distances).reshape((20, 1))
-    weights = np.zeros((1,20))
-    weights[0][:4] = np.array([0.5, 0.25, 0.125, 0.07])
+def calculate_distance(distances, num_keypoints=5):
+    distances = np.array(distances).reshape((num_keypoints, 1))
+    weights = np.ones((1,num_keypoints))
+    # weights[0][:4] = np.array([0.5, 0.25, 0.125, 0.07])
     # print(weights)
     return np.dot(weights, distances)
 
@@ -145,18 +145,20 @@ def sift_comparison(og1, og2):
 def create_match_points(og1, og2, n):
     matches, keypoints_1, keypoints_2 = sift_comparison(og1, og2)
     distances = []
-
+    p1s, p2s = [], []
     for match in matches[:n]:
         # print(match.distance)
         distances.append(match.distance)
         color = random_color()
         p1 = keypoints_1[match.queryIdx].pt
+        p1s.append(p1)
         p2 = keypoints_2[match.trainIdx].pt
+        p2s.append(p2)
         # print(type(p1[0]))
         og1 = cv2.circle(og1, (int(p1[0]), int(p1[1])), 8, (255, 0, 0), 5)
         og2 = cv2.circle(og2, (int(p2[0]), int(p2[1])), 8, (255, 0, 0), 5)
 
-    return og1, og2, distances, keypoints_1, keypoints_2
+    return og1, og2, distances, p1s, p2s
 
 
 def crop_image_to_bounding_box(image_path, v):
@@ -174,7 +176,7 @@ def sift_bounding_box_comparison(og1_path, og2_path, n):
 
     bb1_sift, bb2_sift, distances, kp1, kp2 = create_match_points(bb1, bb2, n)
 
-    print(calculate_distance(distances))
+    print(calculate_distance(distances, n))
     # print(calculate_point_similarity(kp1, kp2))
     # print(point_distances_using_complex(kp1, kp2))
 
@@ -185,8 +187,8 @@ def sift_bounding_box_comparison(og1_path, og2_path, n):
 
 
 if __name__ == "__main__":
-    name1 = 'taj2.jpeg'
-    name2 = 'taj1.jpeg'
+    name1 = 'taj1.jpeg'
+    name2 = 'taj2.jpeg'
 
     og1 = cv2.imread(name1)
     og2 = cv2.imread(name2)
@@ -196,10 +198,17 @@ if __name__ == "__main__":
     box1 = calculate_padded_box(name1)
     box2 = calculate_padded_box(name2)
 
-    bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 20)
+    bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 3)
 
     bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
     bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
+
+    print(kp1[0], kp1[2])
+    print(compute_distance(kp1[0], kp1[2]))
+
+    print(kp2[0], kp2[2])
+    print(compute_distance(kp2[0], kp2[2]))
+
     #
     # drawing = convex_hull(cv2.imread(name1))
     #
@@ -211,8 +220,8 @@ if __name__ == "__main__":
     # cv2.imshow("", image1)
     # cv2.imshow("a", image2)
 
-    cv2.imshow("", bb_sift1)
-    cv2.imshow("a", bb_sift2)
+    cv2.imshow("1", bb_sift1)
+    cv2.imshow("2", bb_sift2)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()

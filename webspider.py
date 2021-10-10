@@ -8,7 +8,7 @@ import io
 
 from google.cloud import vision
 
-DRIVER_PATH = '/Users/sunidhidhawan/Desktop/ai-perlapse/chromedriver'
+DRIVER_PATH = '/Users/pats/webdriver/chromedriver 4'
 wd = webdriver.Chrome(executable_path=DRIVER_PATH)
 wd.get('https://google.com')
 
