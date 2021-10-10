@@ -10,7 +10,7 @@ from google.cloud import vision
 
 DRIVER_PATH = '/Users/pats/webdriver/chromedriver 4'
 wd = webdriver.Chrome(executable_path=DRIVER_PATH)
-wd.get('https://google.com')
+# wd.get('https://google.com')
 
 
 def persist_image(folder_path: str, url: str, unique_file_number: int):
@@ -145,7 +145,7 @@ def run_quickstart(search_term):
     # [END vision_python_migration_client]
 
     # Loads the image into memory
-    folder_path = 'images/' + search_term
+    folder_path = 'images/' + search_term.replace(" ", "_")
     firstlabels = []
 
     firstIteration = True

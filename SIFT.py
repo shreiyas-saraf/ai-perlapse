@@ -167,16 +167,26 @@ def crop_image_to_bounding_box(image_path, v):
     return crop
 
 
-def sift_bounding_box_comparison(og1_path, og2_path, n):
-    v1 = bounding_box_coordinates(og1_path)
-    v2 = bounding_box_coordinates(og2_path)
+def sift_bounding_box_comparison(og1_path, og2_path, n, bb=True):
 
-    bb1 = crop_image_to_bounding_box(og1_path, v1)
-    bb2 = crop_image_to_bounding_box(og2_path, v2)
+    og1 = cv2.imread(og1_path)
+    og2 = cv2.imread(og2_path)
+
+    if not bb:
+        bb1 = cv2.imread(og1_path)
+        bb2 = cv2.imread(og2_path)
+    else:
+        v1 = bounding_box_coordinates(og1_path)
+        v2 = bounding_box_coordinates(og2_path)
+
+        bb1 = crop_image_to_bounding_box(og1_path, v1)
+        bb2 = crop_image_to_bounding_box(og2_path, v2)
+
+        print("1 done")
 
     bb1_sift, bb2_sift, distances, kp1, kp2 = create_match_points(bb1, bb2, n)
 
-    print(calculate_distance(distances, n))
+    # print(calculate_distance(distances, n))
     # print(calculate_point_similarity(kp1, kp2))
     # print(point_distances_using_complex(kp1, kp2))
 
@@ -187,21 +197,21 @@ def sift_bounding_box_comparison(og1_path, og2_path, n):
 
 
 if __name__ == "__main__":
-    name1 = 'taj1.jpeg'
-    name2 = 'taj2.jpeg'
+    name1 = 'hyperlapse/IMG_0630.JPG'
+    name2 = 'hyperlapse/IMG_0690.JPG'
 
-    og1 = cv2.imread(name1)
-    og2 = cv2.imread(name2)
+    # og1 = cv2.imread(name1)
+    # og2 = cv2.imread(name2)
 
     # image1, image2 = create_match_points(og1, og2, 10)
 
-    box1 = calculate_padded_box(name1)
-    box2 = calculate_padded_box(name2)
+    # box1 = calculate_padded_box(name1)
+    # box2 = calculate_padded_box(name2)
 
-    bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 3)
+    bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 3, False)
 
-    bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
-    bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
+    # bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
+    # bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
 
     print(kp1[0], kp1[2])
     print(compute_distance(kp1[0], kp1[2]))
