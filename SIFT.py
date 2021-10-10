@@ -197,8 +197,8 @@ def sift_bounding_box_comparison(og1_path, og2_path, n, bb=True):
 
 
 if __name__ == "__main__":
-    name1 = 'hyperlapse/IMG_0630.JPG'
-    name2 = 'hyperlapse/IMG_0690.JPG'
+    name1 = 'IMG_0626.JPG'
+    name2 = 'IMG_0705.JPG'
 
     # og1 = cv2.imread(name1)
     # og2 = cv2.imread(name2)
