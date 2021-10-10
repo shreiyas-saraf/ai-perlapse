@@ -4,10 +4,16 @@ from matplotlib import pyplot as plt
 from LandmarkDetection import *
 import random
 import math
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
+
+# TODO: try to see relative distance from mean in one and then compare in other?
+# TODO: try to compare anomalies
 
 def calculate_distance(distances):
-    distances = np.array(distances).reshape((4, 1))
-    weights = np.array([0.5, 0.25, 0.125, 0.07])
+    distances = np.array(distances).reshape((20, 1))
+    weights = np.zeros((1,20))
+    weights[0][:4] = np.array([0.5, 0.25, 0.125, 0.07])
+    # print(weights)
     return np.dot(weights, distances)
 
 def compute_angle(p1, p2):
@@ -38,6 +44,32 @@ def calculate_point_similarity(kp1, kp2):
     return (
         np.divide(matrix1,matrix2),
     )
+
+def convex_hull(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # convert to grayscale
+    blur = cv2.blur(gray, (3, 3))  # blur the image
+    ret, thresh = cv2.threshold(blur, 50, 255, cv2.THRESH_BINARY)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    hull = []
+    # calculate points for each contour
+    for i in range(len(contours)):
+    # creating convex hull object for each contour
+        hull.append(cv2.convexHull(contours[i], False))
+
+    # create an empty black image
+    drawing = np.zeros((thresh.shape[0], thresh.shape[1], 3), np.uint8)
+
+    # draw contours and hull points
+    for i in range(len(contours)):
+        color_contours = (0, 255, 0)  # green - color for contours
+        color = (255, 0, 0)  # blue - color for convex hull
+        # draw ith contour
+        cv2.drawContours(drawing, contours, i, color_contours, 1, 8, hierarchy)
+        # draw ith convex hull object
+        cv2.drawContours(drawing, hull, i, color, 1, 8)
+
+    return drawing
 
 def point_distances_using_complex(kp1, kp2):
     # Convert x, y coordinates into complex numbers
@@ -108,7 +140,7 @@ def create_match_points(og1, og2, n):
     distances = []
     
     for match in matches[:n]:
-        print(match.distance)
+        # print(match.distance)
         distances.append(match.distance)
         color = random_color()
         p1 = keypoints_1[match.queryIdx].pt
@@ -135,13 +167,13 @@ def sift_bounding_box_comparison(og1_path, og2_path, n):
     bb1_sift, bb2_sift, distances, kp1, kp2 = create_match_points(bb1, bb2, n)
 
     print(calculate_distance(distances))
-    print(calculate_point_similarity(kp1, kp2))
+    # print(calculate_point_similarity(kp1, kp2))
     # print(point_distances_using_complex(kp1, kp2))
 
     og1[v1[0].y:v1[1].y, v1[0].x:v1[1].x] = bb1_sift
     og2[v2[0].y:v2[1].y, v2[0].x:v2[1].x] = bb2_sift
 
-    return og1, og2, v1, v2
+    return og1, og2, v1, v2, kp1, kp2
 
 
 if __name__=="__main__":
@@ -156,12 +188,16 @@ if __name__=="__main__":
     box1 = calculate_padded_box(name1)
     box2 = calculate_padded_box(name2)
 
-    bb_sift1, bb_sift2, v1, v2 = sift_bounding_box_comparison(name1, name2, 4)
+    bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 20)
 
     bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
     bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
-
-    # cv2.imshow("", box1)
+    #
+    # drawing = convex_hull(cv2.imread(name1))
+    #
+    # cv2.imshow("Drawing", drawing)
+    #
+    # cv2.imshow("", cv2.imread(name1))
     # cv2.imshow("a", box2)
 
     # cv2.imshow("", image1)
