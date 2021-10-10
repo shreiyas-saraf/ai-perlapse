@@ -1,16 +1,20 @@
 import hashlib
 import time
+
+import PIL
 from PIL import Image
 import requests
 from selenium import webdriver
 import os
 import io
-
 from google.cloud import vision
 
 DRIVER_PATH = '/Users/pats/webdriver/chromedriver 4'
 wd = webdriver.Chrome(executable_path=DRIVER_PATH)
-# wd.get('https://google.com')
+wd.get('https://google.com')
+
+
+# vision_client = vision.Client('ServiceAccountKey.json')
 
 
 def persist_image(folder_path: str, url: str, unique_file_number: int):
@@ -23,7 +27,7 @@ def persist_image(folder_path: str, url: str, unique_file_number: int):
     try:
         image_file = io.BytesIO(image_content)
         image = Image.open(image_file).convert('RGB')
-        file_path = os.path.join(folder_path, 'image' + str(unique_file_number) + '.jpg')
+        file_path = os.path.join(folder_path, 'image' + str(unique_file_number) + '.png')
         with open(file_path, 'wb') as f:
             image.save(f, "JPEG", quality=85)
         print(f"SUCCESS - saved {url} - as {file_path}")
@@ -38,9 +42,13 @@ def fetch_image_urls(query: str, max_links_to_fetch: int, wd: webdriver, sleep_b
 
         # build the google query
 
-    search_url = "https://www.google.com/search?safe=off&site=&tbm=isch&source=hp&q={q}&oq={q}&gs_l=img"
-
+    # search_url = "https://www.google.com/search?safe=off&site=&tbm=isch&source=hp&q={q}&oq={q}&gs_l=img"
+    # search_url = "https://www.google.com/search?as_st=y&tbm=isch&as_q={" \
+    #             "q}&as_epq=&as_oq=&as_eq=&cr=&as_sitesearch=&safe=images&tbs=isz:lt,islt:qsvga "
+    # query = query + " imagesize:large"
     # load the page
+    search_url = "https://www.google.com/search?q={q}%20&tbm=isch&safe=images&tbs=isz:l&hl=en&sa=X&ved" \
+                 "=0CAIQpwVqFwoTCNDC3M3Xv_MCFQAAAAAdAAAAABAc&biw=1440&bih=722 "
     wd.get(search_url.format(q=query))
 
     image_urls = set()
@@ -98,48 +106,30 @@ def search_and_download(search_term: str, driver_path: str, number_images: int, 
         res = fetch_image_urls(search_term, number_images, wd=wd, sleep_between_interactions=0.5)
     unique_file_number = 1
     for elem in res:
-        persist_image(target_folder, elem, unique_file_number)
-        unique_file_number += 1
-
-
-def detect_landmarks(path, landmark_name):
-    """Detects landmarks in the file. """
-
-    os.environ[
-        'GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
-    client = vision.ImageAnnotatorClient()
-    # print(os.getcwd())
-
-    for filename in os.listdir(path):
-        # print(filename)
-        filename = path + "/" + filename
-        # filename = "/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/images_collection/"+filename
-        with io.open(filename, 'rb') as image_file:
-            content = image_file.read()
-        image = vision.Image(content=content)
-
-        response = client.landmark_detection(image=image)
-        landmarks = response.landmark_annotations
-        CUT_OFF_SCORE = 0.5
-
         try:
-            if landmarks[0].score < CUT_OFF_SCORE:
-                print("SCORE LOW:" + filename)
-                # os.remove(filename)
+            persist_image(target_folder, elem, unique_file_number)
+            unique_file_number += 1
         except:
-            print("NO LANDMARKS:" + filename)
+            pass
 
 
-def run_quickstart(search_term):
-    # [START vision_quickstart]
+def resolution_based_filter(search_term):
+    removed = 0
+    folder_path = 'images/' + search_term.replace(" ", "_")
+    for file_name in os.listdir(folder_path):
+        file_name = os.path.join(folder_path, file_name)
+        image2 = PIL.Image.open(file_name)
+        width, height = image2.size
+        if width < 300 or height < 400:
+            print("REMOVING LOW RESOLUTION PICTURE: " + file_name)
+            print("With resolution:"+ str(width) + " x " + str(height))
+            os.remove(file_name)
+            removed += 1
+    return removed
 
-    # Imports the Google Cloud client library
-    # [START vision_python_migration_import]
 
-    # [END vision_python_migration_import]
-
-    # Instantiates a client
-    # [START vision_python_migration_client]
+def feature_based_filter(search_term):
+    print()
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
     client = vision.ImageAnnotatorClient()
     # [END vision_python_migration_client]
@@ -147,8 +137,8 @@ def run_quickstart(search_term):
     # Loads the image into memory
     folder_path = 'images/' + search_term.replace(" ", "_")
     firstlabels = []
-
     firstIteration = True
+    removed = 0
     for file_name in os.listdir(folder_path):
         file_name = os.path.join(folder_path, file_name)
         with io.open(file_name, 'rb') as image_file:
@@ -167,8 +157,6 @@ def run_quickstart(search_term):
             for label in labels:
                 firstlabels.append(label.description)
             firstIteration = False
-            print("FIRST LABELS")
-            print(firstlabels)
 
         else:
             current_labels = []
@@ -178,17 +166,58 @@ def run_quickstart(search_term):
                     # print(label.description + " MATCHES " + firstlabels[i])
                     similarity += 1
                 i += 1
-            print(current_labels)
             print(file_name)
             if similarity < 3:
-                print("BAD IMAGE\n")
+                os.remove(file_name)
+                print(current_labels)
+                print("REMOVE BAD IMAGE:" + file_name + "\n")
+                removed += 1
             else:
                 print("GOOD IMAGE\n")
-                # [END vision_quickstart]
+    return removed
 
+
+def landmark_rating_filter(search_term):
+    removed = 0
+    print("LANDMARK RATING BASED FILTER")
+    """Detects landmarks in the file. """
+    folder_path = 'images/' + search_term.replace(" ", "_")
+    os.environ[
+        'GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
+    client = vision.ImageAnnotatorClient()
+    # print(os.getcwd())
+
+    for file_name in os.listdir(folder_path):
+        file_name = os.path.join(folder_path, file_name)
+        # file_name = "/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/images_collection/"+file_name
+        with io.open(file_name, 'rb') as image_file:
+            content = image_file.read()
+        image = vision.Image(content=content)
+
+        response = client.landmark_detection(image=image)
+        landmarks = response.landmark_annotations
+        CUT_OFF_SCORE = 0.5
+
+        try:
+            if landmarks[0].score < CUT_OFF_SCORE:
+                print("SCORE LOW:" + file_name)
+                os.remove(file_name)
+                removed += 1
+        except:
+            print("NO LANDMARKS:" + file_name)
+    return removed
+
+def run_filtering(search_term):
+    removed_through_feature = feature_based_filter(search_term=search_term)
+    removed_through_rating = landmark_rating_filter(search_term=search_term)
+    removed_through_resolution = resolution_based_filter(search_term=search_term)
+    print("FILTERED OUT " + str(removed_through_feature) + " IMAGES BASED ON FEATURE DETECTION")
+    print("FILTERED OUT " + str(removed_through_rating) + " IMAGES BASED ON RATING DETECTION")
+    print("FILTERED OUT " + str(removed_through_resolution) + " IMAGES BASED ON FEATURE DETECTION")
 
 if __name__ == '__main__':
     search_term = input("Name of Monument:")
     number_img = int(input("Number of images for hyperlapse: "))
     search_and_download(search_term=search_term, driver_path=DRIVER_PATH, number_images=number_img * 2)
-    run_quickstart(search_term=search_term)
+    input("Press any key to run filtering")
+    run_filtering(search_term=search_term)

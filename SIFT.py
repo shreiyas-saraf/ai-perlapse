@@ -39,6 +39,9 @@ def compute_distance(p1, p2):
     hyp = ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2) ** 0.5
     return hyp
 
+def normalize(x, img):
+    return x/(img.shape[0]*img.shape[1])
+
 
 def calculate_point_similarity(kp1, kp2):
     # kp1/2 = [(x, y), (x, y), (x, y), (x, y)]
@@ -209,43 +212,44 @@ def batch_rearrange(folder):
     # images =[item for item in os.listdir(folder)]
 
     for i in range(len(images)-1):
-        name1 = folder+"/"+images[i]
-        name2 = folder+"/"+images[i+1]
+        if images[1].endswith("png"):
+            name1 = folder+"/"+images[i]
+            name2 = folder+"/"+images[i+1]
 
-        print(name1, name2)
-        # og1 = cv2.imread(name1)
-        # og2 = cv2.imread(name2)
+            print(name1, name2)
+            # og1 = cv2.imread(name1)
+            # og2 = cv2.imread(name2)
 
-        # image1, image2 = create_match_points(og1, og2, 10)
+            # image1, image2 = create_match_points(og1, og2, 10)
 
-        # box1 = calculate_padded_box(name1)
-        # box2 = calculate_padded_box(name2)
-        #
-        bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 3)
+            # box1 = calculate_padded_box(name1)
+            # box2 = calculate_padded_box(name2)
+            #
+            bb_sift1, bb_sift2, v1, v2, kp1, kp2 = sift_bounding_box_comparison(name1, name2, 3)
 
-        # bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
-        # bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
+            # bb_sift1 = draw_bounding_box(bb_sift1, v1, padding=True)
+            # bb_sift2 = draw_bounding_box(bb_sift2, v2, padding=True)
 
-        # print(kp1[1], kp1[2])
-        print(compute_distance(kp1[1], kp1[2]))
+            # print(kp1[1], kp1[2])
+            print(normalize(compute_distance(kp1[1], kp1[2]), cv2.imread(name1)))
 
-        # print(kp2[1], kp2[2])
-        print(compute_distance(kp2[1], kp2[2]))
-        #
-        # cv2.imshow("1", bb_sift1)
-        # cv2.imshow("2", bb_sift2)
-        #
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+            # print(kp2[1], kp2[2])
+            print(normalize(compute_distance(kp2[1], kp2[2]), cv2.imread(name2)))
+            #
+            cv2.imshow("1", bb_sift1)
+            cv2.imshow("2", bb_sift2)
+            #
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
 def process_jpg_png(image_path):
     im1 = Image.open(image_path)
-    im1.save(image_path[:-3] + ".jpeg")
+    im1.save(image_path[:8] + ".png")
 
 if __name__ == "__main__":
     name1 = 'hyp6.png'
     name2 = 'hyp2.png'
 
-    folder = "hyperlapse"
+    folder = "images/white_house"
     batch_rearrange(folder)
 
