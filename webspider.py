@@ -6,7 +6,7 @@ from selenium import webdriver
 import os
 import io
 
-# from google.cloud import vision
+from google.cloud import vision
 
 DRIVER_PATH = '/Users/pats/webdriver/chromedriver 4'
 wd = webdriver.Chrome(executable_path=DRIVER_PATH)
@@ -102,12 +102,11 @@ def search_and_download(search_term: str, driver_path: str, number_images: int, 
         unique_file_number += 1
 
 
-"""
 def detect_landmarks(path, landmark_name):
-    Detects landmarks in the file. 
+    """Detects landmarks in the file. """
 
     os.environ[
-        'GOOGLE_APPLICATION_CREDENTIALS'] = r'/Users/pats/OneDrive/My Stuff/VandyHacks/ai-perlapse/ServiceAccountKey.json'
+        'GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
     client = vision.ImageAnnotatorClient()
     # print(os.getcwd())
 
@@ -129,8 +128,67 @@ def detect_landmarks(path, landmark_name):
                 # os.remove(filename)
         except:
             print("NO LANDMARKS:" + filename)
-"""
 
-search_term = input("Name of Monument:")
-number_img = int(input("Number of images for hyperlapse: "))
-search_and_download(search_term=search_term, driver_path=DRIVER_PATH, number_images=number_img * 2)
+
+def run_quickstart(search_term):
+    # [START vision_quickstart]
+
+    # Imports the Google Cloud client library
+    # [START vision_python_migration_import]
+
+    # [END vision_python_migration_import]
+
+    # Instantiates a client
+    # [START vision_python_migration_client]
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'ServiceAccountKey.json'
+    client = vision.ImageAnnotatorClient()
+    # [END vision_python_migration_client]
+
+    # Loads the image into memory
+    folder_path = 'images/' + search_term
+    firstlabels = []
+
+    firstIteration = True
+    for file_name in os.listdir(folder_path):
+        file_name = os.path.join(folder_path, file_name)
+        with io.open(file_name, 'rb') as image_file:
+            content = image_file.read()
+        image = vision.Image(content=content)
+
+        # Performs label detection on the image file
+        response = client.label_detection(image=image)
+        labels = response.label_annotations
+
+        similarity = 0
+        # print('Labels:')
+        i = 0
+        if firstIteration:
+            # print(file_name)
+            for label in labels:
+                firstlabels.append(label.description)
+            firstIteration = False
+            print("FIRST LABELS")
+            print(firstlabels)
+
+        else:
+            current_labels = []
+            for label in labels:
+                current_labels.append(label.description)
+                if label.description in firstlabels:
+                    # print(label.description + " MATCHES " + firstlabels[i])
+                    similarity += 1
+                i += 1
+            print(current_labels)
+            print(file_name)
+            if similarity < 3:
+                print("BAD IMAGE\n")
+            else:
+                print("GOOD IMAGE\n")
+                # [END vision_quickstart]
+
+
+if __name__ == '__main__':
+    search_term = input("Name of Monument:")
+    number_img = int(input("Number of images for hyperlapse: "))
+    search_and_download(search_term=search_term, driver_path=DRIVER_PATH, number_images=number_img * 2)
+    run_quickstart(search_term=search_term)
